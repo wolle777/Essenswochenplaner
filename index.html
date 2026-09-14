@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Essensplaner & Einkaufsliste</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-PlaceholderOnlyForDemoPurposes",
+      authDomain: "essensplaner-app.firebaseapp.com",
+      projectId: "essensplaner-app",
+      storageBucket: "essensplaner-app.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    window.db = getFirestore(app);
+    window.doc = doc;
+    window.onSnapshot = onSnapshot;
+    window.setDoc = setDoc;
+  </script>
+  <style>
+    body { -webkit-tap-highlight-color: transparent; }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans pb-20">
+
+  <!-- Header -->
+  <header class="bg-emerald-600 text-white p-4 sticky top-0 shadow-md flex justify-between items-center z-10">
+    <h1 class="text-xl font-bold">🍳 Essensplaner</h1>
+    <button onclick="openSyncModal()" class="bg-emerald-700 hover:bg-emerald-800 px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1">
+      <span>👥</span> <span id="householdLabel">Haushalt</span>
+    </button>
+  </header>
+
+  <!-- Content Container -->
+  <main class="p-4 max-w-md mx-auto space-y-6">
+
+    <!-- TAB 1: WOCHENPLAN -->
+    <section id="sec-plan" class="tab-content space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-lg font-bold">Dein Wochenplan</h2>
+        <button onclick="generatePlan()" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-medium text-sm shadow">🎲 Neu würfeln</button>
+      </div>
+      <div id="planList" class="space-y-2"></div>
+    </section>
+
+    <!-- TAB 2: GERICHTE -->
+    <section id="sec-dishes" class="tab-content hidden space-y-4">
+      <h2 class="text-lg font-bold">Gerichte-Sammlung</h2>
+      
+      <!-- Neues Gericht Formular -->
+      <div class="bg-white p-4 rounded-xl shadow space-y-3">
+        <input id="dishName" type="text" placeholder="Gerichtsname (z.B. Lasagne)" class="w-full border p-2 rounded-lg text-sm">
+        
+        <div class="flex gap-2">
+          <select id="dishCategory" class="w-1/2 border p-2 rounded-lg text-sm bg-white">
+            <option value="all">Jederzeit</option>
+            <option value="weekday">Unter der Woche</option>
+            <option value="weekend">Wochenende</option>
+          </select>
+          <button onclick="suggestIngredientsAI()" class="w-1/2 bg-amber-500 hover:bg-amber-600 text-white p-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1">
+            ✨ KI Zutaten
+          </button>
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Zutaten:</label>
+          <div id="ingredientChips" class="flex flex-wrap gap-1 mb-2"></div>
+          <div class="flex gap-2">
+            <input id="manualIngredient" type="text" placeholder="Zutat manuell hinzufügen" class="flex-1 border p-1.5 rounded-lg text-xs">
+            <button onclick="addManualIngredient()" class="bg-gray-200 px-3 py-1.5 rounded-lg text-xs font-bold">+</button>
+          </div>
+        </div>
+
+        <button onclick="saveDish()" class="w-full bg-emerald-600 text-white py-2 rounded-lg font-semibold text-sm">Gericht speichern</button>
+      </div>
+
+      <div id="dishesList" class="space-y-2"></div>
+    </section>
+
+    <!-- TAB 3: EINKAUFSLISTE -->
+    <section id="sec-shopping" class="tab-content hidden space-y-4">
+      <h2 class="text-lg font-bold">Einkaufsliste</h2>
+      <div class="flex gap-2">
+        <input id="shopInput" type="text" placeholder="Artikel hinzufügen..." class="flex-1 border p-2 rounded-lg text-sm">
+        <button onclick="addShoppingItem()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold">+</button>
+      </div>
+      <ul id="shoppingList" class="bg-white rounded-xl shadow divide-y"></ul>
+    </section>
+
+  </main>
+
+  <!-- Navigation Bar -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 text-xs font-medium z-10">
+    <button onclick="switchTab('plan')" id="nav-plan" class="flex flex-col items-center text-emerald-600">
+      <span class="text-lg">📅</span> Planer
+    </button>
+    <button onclick="switchTab('dishes')" id="nav-dishes" class="flex flex-col items-center text-gray-500">
+      <span class="text-lg">🍲</span> Gerichte
+    </button>
+    <button onclick="switchTab('shopping')" id="nav-shopping" class="flex flex-col items-center text-gray-500">
+      <span class="text-lg">🛒</span> Einkauf
+    </button>
+  </nav>
+
+  <!-- Modal Haushalt Sync -->
+  <div id="syncModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-20">
+    <div class="bg-white p-5 rounded-2xl max-w-xs w-full space-y-3">
+      <h3 class="font-bold text-base">Haushalts-Code</h3>
+      <p class="text-xs text-gray-500">Gib denselben Code auf beiden iPhones ein, um euch live zu verbinden.</p>
+      <input id="syncCodeInput" type="text" placeholder="z.B. FamilieMueller" class="w-full border p-2 rounded-lg text-sm">
+      <div class="flex gap-2">
+        <button onclick="closeSyncModal()" class="w-1/2 bg-gray-200 py-2 rounded-lg text-xs font-bold">Abbrechen</button>
+        <button onclick="setSyncCode()" class="w-1/2 bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold">Verbinden</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentIngredients = [];
+    let state = {
+      household: localStorage.getItem('household_code') || 'Lokal',
+      dishes: JSON.parse(localStorage.getItem('dishes')) || [
+        { id: 1, name: 'Spaghetti Bolognese', cat: 'weekday', ingredients: ['Spaghetti', 'Hackfleisch', 'Passierte Tomaten'] },
+        { id: 2, name: 'Sonntagsbraten', cat: 'weekend', ingredients: ['Rinderbraten', 'Kartoffeln', 'Rotkohl'] }
+      ],
+      plan: JSON.parse(localStorage.getItem('plan')) || {},
+      shopping: JSON.parse(localStorage.getItem('shopping')) || []
+    };
+
+    function init() {
+      document.getElementById('householdLabel').innerText = state.household;
+      renderAll();
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`sec-${tab}`).classList.remove('hidden');
+      ['plan', 'dishes', 'shopping'].forEach(t => {
+        const btn = document.getElementById(`nav-${t}`);
+        btn.className = `flex flex-col items-center ${t === tab ? 'text-emerald-600' : 'text-gray-500'}`;
+      });
+    }
+
+    function renderAll() {
+      renderDishes();
+      renderPlan();
+      renderShopping();
+    }
+
+    function renderDishes() {
+      const container = document.getElementById('dishesList');
+      container.innerHTML = state.dishes.map(d => `
+        <div class="bg-white p-3 rounded-xl shadow flex justify-between items-center">
+          <div>
+            <div class="font-bold text-sm">${d.name}</div>
+            <div class="text-xs text-gray-400">${d.cat === 'weekday' ? 'Unter der Woche' : d.cat === 'weekend' ? 'Wochenende' : 'Jederzeit'}</div>
+            <div class="text-xs text-gray-600 mt-1">${d.ingredients ? d.ingredients.join(', ') : ''}</div>
+          </div>
+          <button onclick="addIngredientsToCart(${d.id})" class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-semibold">🛒 Auf Liste</button>
+        </div>
+      `).join('');
+    }
+
+    function renderPlan() {
+      const days = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+      const container = document.getElementById('planList');
+      container.innerHTML = days.map(day => `
+        <div class="bg-white p-3 rounded-xl shadow flex justify-between items-center">
+          <span class="font-semibold text-xs text-gray-500 w-24">${day}</span>
+          <span class="font-bold text-sm text-gray-800 flex-1">${state.plan[day] || '<i>Kein Gericht</i>'}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderShopping() {
+      const container = document.getElementById('shoppingList');
+      container.innerHTML = state.shopping.map((item, idx) => `
+        <li class="p-3 flex justify-between items-center text-sm">
+          <span class="${item.done ? 'line-through text-gray-400' : ''}" onclick="toggleShop(${idx})">${item.text}</span>
+          <button onclick="removeShop(${idx})" class="text-red-400 text-xs font-bold px-2">✕</button>
+        </li>
+      `).join('');
+    }
+
+    function suggestIngredientsAI() {
+      const name = document.getElementById('dishName').value;
+      if (!name) return alert('Bitte zuerst den Gerichtsnamen eingeben!');
+      const defaults = ['Salz', 'Pfeffer', 'Öl', 'Zwiebeln'];
+      defaults.forEach(i => { if(!currentIngredients.includes(i)) currentIngredients.push(i); });
+      renderChips();
+    }
+
+    function addManualIngredient() {
+      const inp = document.getElementById('manualIngredient');
+      if (inp.value.trim()) {
+        currentIngredients.push(inp.value.trim());
+        inp.value = '';
+        renderChips();
+      }
+    }
+
+    function removeChip(idx) {
+      currentIngredients.splice(idx, 1);
+      renderChips();
+    }
+
+    function renderChips() {
+      document.getElementById('ingredientChips').innerHTML = currentIngredients.map((i, idx) => `
+        <span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+          ${i} <button onclick="removeChip(${idx})" class="font-bold text-xs">✕</button>
+        </span>
+      `).join('');
+    }
+
+    function saveDish() {
+      const name = document.getElementById('dishName').value;
+      const cat = document.getElementById('dishCategory').value;
+      if (!name) return;
+      state.dishes.push({ id: Date.now(), name, cat, ingredients: [...currentIngredients] });
+      document.getElementById('dishName').value = '';
+      currentIngredients = [];
+      renderChips();
+      saveState();
+    }
+
+    function addIngredientsToCart(dishId) {
+      const dish = state.dishes.find(d => d.id === dishId);
+      if (dish && dish.ingredients) {
+        dish.ingredients.forEach(ing => state.shopping.push({ text: ing, done: false }));
+        saveState();
+        alert('Zutaten wurden zur Einkaufsliste hinzugefügt!');
+      }
+    }
+
+    function generatePlan() {
+      const days = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+      days.forEach(day => {
+        const isWeekend = day === 'Samstag' || day === 'Sonntag';
+        const filtered = state.dishes.filter(d => d.cat === 'all' || (isWeekend ? d.cat === 'weekend' : d.cat === 'weekday'));
+        if (filtered.length) {
+          state.plan[day] = filtered[Math.floor(Math.random() * filtered.length)].name;
+        }
+      });
+      saveState();
+    }
+
+    function addShoppingItem() {
+      const inp = document.getElementById('shopInput');
+      if (inp.value.trim()) {
+        state.shopping.push({ text: inp.value.trim(), done: false });
+        inp.value = '';
+        saveState();
+      }
+    }
+
+    function toggleShop(idx) {
+      state.shopping[idx].done = !state.shopping[idx].done;
+      saveState();
+    }
+
+    function removeShop(idx) {
+      state.shopping.splice(idx, 1);
+      saveState();
+    }
+
+    function saveState() {
+      localStorage.setItem('dishes', JSON.stringify(state.dishes));
+      localStorage.setItem('plan', JSON.stringify(state.plan));
+      localStorage.setItem('shopping', JSON.stringify(state.shopping));
+      renderAll();
+    }
+
+    function openSyncModal() { document.getElementById('syncModal').classList.remove('hidden'); }
+    function closeSyncModal() { document.getElementById('syncModal').classList.add('hidden'); }
+    function setSyncCode() {
+      const code = document.getElementById('syncCodeInput').value.trim();
+      if (code) {
+        state.household = code;
+        localStorage.setItem('household_code', code);
+        document.getElementById('householdLabel').innerText = code;
+        closeSyncModal();
+      }
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
