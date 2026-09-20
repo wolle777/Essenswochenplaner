@@ -35,9 +35,9 @@
 
     <!-- TAB 2: GERICHTE -->
     <section id="sec-dishes" class="tab-content hidden space-y-4">
-      <h2 class="text-lg font-bold">Gerichte</h2>
+      <h2 class="text-lg font-bold" id="formTitle">Gericht hinzufügen</h2>
       
-      <div class="bg-white p-4 rounded-xl shadow space-y-3">
+      <div class="bg-white p-4 rounded-xl shadow space-y-3" id="dishForm">
         <input id="dishName" type="text" placeholder="Gerichtsname (z.B. Lasagne)" class="w-full border p-2 rounded-lg text-sm">
         <select id="dishCategory" class="w-full border p-2 rounded-lg text-sm bg-white">
           <option value="all">Jederzeit</option>
@@ -53,9 +53,13 @@
           <div id="ingredientChips" class="flex flex-wrap gap-1"></div>
         </div>
 
-        <button onclick="saveDish()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-semibold text-sm">Gericht speichern</button>
+        <div class="flex gap-2">
+          <button id="btnSaveDish" onclick="saveDish()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-semibold text-sm">Gericht speichern</button>
+          <button id="btnCancelEdit" onclick="resetForm()" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg font-semibold text-sm">Abbrechen</button>
+        </div>
       </div>
 
+      <h2 class="text-lg font-bold pt-2">Gespeicherte Gerichte</h2>
       <div id="dishesList" class="space-y-2"></div>
     </section>
 
@@ -76,7 +80,7 @@
 
   </main>
 
-  <!-- NAVIGATION (DEUTLICH VERGRÖSSERTE ICONS) -->
+  <!-- NAVIGATION -->
   <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center py-3 z-10 pb-6 shadow-xl">
     <button onclick="switchTab('plan')" id="nav-plan" class="flex flex-col items-center gap-0.5 text-emerald-600 font-bold transition-colors">
       <span class="text-4xl leading-none">📅</span>
@@ -94,6 +98,7 @@
 
   <script>
     let ingredients = [];
+    let editingDishId = null;
     
     let savedDishes = localStorage.getItem('dishes');
     let savedPlan = localStorage.getItem('plan');
@@ -149,11 +154,47 @@
         <div class="bg-white p-3 rounded-xl shadow flex justify-between items-center">
           <div>
             <div class="font-bold text-sm">${d.name}</div>
-            <div class="text-xs text-gray-400">${d.ingredients ? d.ingredients.join(', ') : ''}</div>
+            <div class="text-xs text-gray-400">${d.ingredients && d.ingredients.length ? d.ingredients.join(', ') : 'Keine Zutaten'}</div>
           </div>
-          <button onclick="deleteDish(${d.id})" class="text-gray-300 hover:text-red-500 font-bold px-2 text-lg">✕</button>
+          <div class="flex items-center gap-1">
+            <button onclick="editDish(${d.id})" title="Gericht bearbeiten" class="text-gray-400 hover:text-emerald-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-lg">
+              ✏️
+            </button>
+            <button onclick="deleteDish(${d.id})" title="Gericht löschen" class="text-gray-300 hover:text-red-500 font-bold px-2 text-lg">
+              ✕
+            </button>
+          </div>
         </div>
       `).join('');
+    }
+
+    function editDish(id) {
+      const dish = state.dishes.find(d => d.id === id);
+      if (!dish) return;
+
+      editingDishId = id;
+      document.getElementById('dishName').value = dish.name;
+      document.getElementById('dishCategory').value = dish.cat || 'all';
+      ingredients = [...(dish.ingredients || [])];
+      renderChips();
+
+      document.getElementById('formTitle').innerText = 'Gericht bearbeiten';
+      document.getElementById('btnSaveDish').innerText = 'Gericht aktualisieren';
+      document.getElementById('btnCancelEdit').classList.remove('hidden');
+
+      document.getElementById('dishForm').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function resetForm() {
+      editingDishId = null;
+      document.getElementById('dishName').value = '';
+      document.getElementById('dishCategory').value = 'all';
+      ingredients = [];
+      renderChips();
+
+      document.getElementById('formTitle').innerText = 'Gericht hinzufügen';
+      document.getElementById('btnSaveDish').innerText = 'Gericht speichern';
+      document.getElementById('btnCancelEdit').classList.add('hidden');
     }
 
     function renderPlan() {
@@ -223,21 +264,49 @@
       }
     }
 
+    function removeIngredient(index) {
+      ingredients.splice(index, 1);
+      renderChips();
+    }
+
     function renderChips() {
-      document.getElementById('ingredientChips').innerHTML = ingredients.map(i => `<span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-full">${i}</span>`).join('');
+      document.getElementById('ingredientChips').innerHTML = ingredients.map((i, idx) => `
+        <span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+          ${i}
+          <button onclick="removeIngredient(${idx})" class="font-bold text-emerald-600 hover:text-emerald-900 ml-1">✕</button>
+        </span>
+      `).join('');
     }
 
     function saveDish() {
       const name = document.getElementById('dishName').value.trim();
       if (!name) return;
-      state.dishes.push({ id: Date.now(), name, cat: document.getElementById('dishCategory').value, ingredients: [...ingredients] });
-      document.getElementById('dishName').value = '';
-      ingredients = [];
-      renderChips();
+
+      if (editingDishId !== null) {
+        const dishIndex = state.dishes.findIndex(d => d.id === editingDishId);
+        if (dishIndex !== -1) {
+          state.dishes[dishIndex] = {
+            id: editingDishId,
+            name: name,
+            cat: document.getElementById('dishCategory').value,
+            ingredients: [...ingredients]
+          };
+        }
+      } else {
+        state.dishes.push({
+          id: Date.now(),
+          name: name,
+          cat: document.getElementById('dishCategory').value,
+          ingredients: [...ingredients]
+        });
+      }
+
+      resetForm();
       saveState();
     }
 
     function deleteDish(id) {
+      if (editingDishId === id) resetForm();
       state.dishes = state.dishes.filter(d => d.id !== id);
       saveState();
     }
