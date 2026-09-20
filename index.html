@@ -3,137 +3,111 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Essensplaner & Einkaufsliste</title>
-  
-  <!-- App-Icons und Farben für iOS -->
+  <title>Essensplaner</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Essensplaner">
-  
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { -webkit-tap-highlight-color: transparent; }
-  </style>
+  <style>body { -webkit-tap-highlight-color: transparent; }</style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans pb-20">
 
   <!-- HEADER -->
   <header class="bg-emerald-600 text-white p-4 sticky top-0 shadow-md flex justify-between items-center z-10">
-    <h1 class="text-xl font-bold flex items-center gap-2">🍳 Essensplaner</h1>
-    <div class="flex gap-2">
-      <button onclick="shareData()" class="bg-emerald-700 hover:bg-emerald-800 px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1 shadow transition">
-        📤 Teilen
-      </button>
-      <button onclick="openImportModal()" class="bg-emerald-700 hover:bg-emerald-800 px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1 shadow transition">
-        📥 Laden
-      </button>
-    </div>
+    <h1 class="text-xl font-bold">🍳 Essensplaner</h1>
+    <button onclick="shareViaLink()" class="bg-emerald-700 hover:bg-emerald-800 px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1 shadow">
+      📤 Plan per Link teilen
+    </button>
   </header>
 
-  <!-- INHALT -->
+  <!-- CONTENT -->
   <main class="p-4 max-w-md mx-auto space-y-6">
 
     <!-- TAB 1: WOCHENPLAN -->
     <section id="sec-plan" class="tab-content space-y-4">
       <div class="flex justify-between items-center">
-        <h2 class="text-lg font-bold text-gray-700">Dein Wochenplan</h2>
-        <button onclick="generatePlan()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-medium text-sm shadow transition">🎲 Neu würfeln</button>
+        <h2 class="text-lg font-bold">Wochenplan</h2>
+        <button onclick="generatePlan()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium shadow flex items-center gap-1">
+          🎲 Alle neu würfeln
+        </button>
       </div>
       <div id="planList" class="space-y-2"></div>
     </section>
 
     <!-- TAB 2: GERICHTE -->
     <section id="sec-dishes" class="tab-content hidden space-y-4">
-      <h2 class="text-lg font-bold text-gray-700">Gerichte-Sammlung</h2>
+      <h2 class="text-lg font-bold">Gerichte</h2>
       
-      <!-- Neues Gericht anlegen -->
-      <div class="bg-white p-4 rounded-xl shadow space-y-3 border-l-4 border-emerald-500">
-        <h3 id="formTitle" class="text-xs font-bold text-gray-400 uppercase tracking-wider">Neues Gericht anlegen</h3>
-        <input id="dishName" type="text" placeholder="Gerichtsname (z.B. Lasagne)" class="w-full border border-gray-300 p-2 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
-        
-        <select id="dishCategory" class="w-full border border-gray-300 p-2 rounded-lg text-sm bg-white focus:outline-none focus:border-emerald-500">
-          <option value="all">Jederzeit (Alltag & Wochenende)</option>
-          <option value="weekday">Nur unter der Woche (Schnell)</option>
-          <option value="weekend">Nur fürs Wochenende (Aufwendig)</option>
+      <div class="bg-white p-4 rounded-xl shadow space-y-3">
+        <input id="dishName" type="text" placeholder="Gerichtsname (z.B. Lasagne)" class="w-full border p-2 rounded-lg text-sm">
+        <select id="dishCategory" class="w-full border p-2 rounded-lg text-sm bg-white">
+          <option value="all">Jederzeit</option>
+          <option value="weekday">Unter der Woche</option>
+          <option value="weekend">Wochenende</option>
         </select>
 
         <div>
-          <label class="block text-xs text-gray-500 mb-1">Zutaten hinzufügen:</label>
           <div class="flex gap-2 mb-2">
-            <input id="manualIngredient" type="text" placeholder="Zutat tippen..." class="flex-1 border border-gray-300 p-2 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
-            <button onclick="addManualIngredient()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-bold transition">+</button>
+            <input id="manualIngredient" type="text" placeholder="Zutat hinzufügen..." class="flex-1 border p-2 rounded-lg text-sm">
+            <button onclick="addIngredient()" class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg font-bold">+</button>
           </div>
-          <div id="ingredientChips" class="flex flex-wrap gap-1.5 mt-2"></div>
+          <div id="ingredientChips" class="flex flex-wrap gap-1"></div>
         </div>
 
-        <div class="flex gap-2 pt-2">
-          <button onclick="saveDish()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-semibold text-sm transition shadow" id="saveDishBtn">Speichern</button>
-          <button onclick="cancelEdit()" id="cancelEditBtn" class="hidden bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg font-semibold text-sm transition border border-gray-300">Abbrechen</button>
-        </div>
+        <button onclick="saveDish()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-semibold text-sm">Gericht speichern</button>
       </div>
 
-      <!-- Liste der Gerichte -->
-      <div id="dishesList" class="space-y-2 mt-4"></div>
+      <div id="dishesList" class="space-y-2"></div>
     </section>
 
     <!-- TAB 3: EINKAUFSLISTE -->
     <section id="sec-shopping" class="tab-content hidden space-y-4">
       <div class="flex justify-between items-center">
-        <h2 class="text-lg font-bold text-gray-700">Einkaufsliste</h2>
-        <button onclick="clearShoppingList()" class="text-red-500 hover:text-red-700 text-xs font-bold border border-red-200 bg-red-50 px-2 py-1 rounded-lg transition">🗑️ Liste leeren</button>
+        <h2 class="text-lg font-bold">Einkaufsliste</h2>
+        <button onclick="clearShopping()" class="text-red-500 text-xs font-bold border border-red-200 bg-red-50 px-2 py-1 rounded-lg hover:bg-red-100">🗑️ Leeren</button>
       </div>
 
       <div class="flex gap-2">
-        <input id="shopInput" type="text" placeholder="Neuer Artikel (z.B. Milch)..." class="flex-1 border border-gray-300 p-2 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
-        <button onclick="addShoppingItem()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold shadow transition">+</button>
+        <input id="shopInput" type="text" placeholder="Artikel hinzufügen..." class="flex-1 border p-2 rounded-lg text-sm">
+        <button onclick="addShopItem()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold">+</button>
       </div>
 
-      <ul id="shoppingList" class="bg-white rounded-xl shadow divide-y divide-gray-100 mt-2"></ul>
+      <ul id="shoppingList" class="bg-white rounded-xl shadow divide-y"></ul>
     </section>
 
   </main>
 
   <!-- NAVIGATION -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around p-2 text-xs font-medium z-10 pb-6 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-    <button onclick="switchTab('plan')" id="nav-plan" class="flex flex-col items-center text-emerald-600 w-1/3 py-1">
-      <span class="text-xl mb-1">📅</span> Planer
-    </button>
-    <button onclick="switchTab('dishes')" id="nav-dishes" class="flex flex-col items-center text-gray-400 w-1/3 py-1">
-      <span class="text-xl mb-1">🍲</span> Gerichte
-    </button>
-    <button onclick="switchTab('shopping')" id="nav-shopping" class="flex flex-col items-center text-gray-400 w-1/3 py-1">
-      <span class="text-xl mb-1">🛒</span> Einkauf
-    </button>
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 text-xs font-medium z-10 pb-5">
+    <button onclick="switchTab('plan')" id="nav-plan" class="flex flex-col items-center text-emerald-600">📅 Planer</button>
+    <button onclick="switchTab('dishes')" id="nav-dishes" class="flex flex-col items-center text-gray-400">🍲 Gerichte</button>
+    <button onclick="switchTab('shopping')" id="nav-shopping" class="flex flex-col items-center text-gray-400">🛒 Einkauf</button>
   </nav>
 
-  <!-- MODAL: DATEN IMPORTIEREN -->
-  <div id="importModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white p-6 rounded-2xl max-w-sm w-full space-y-4 shadow-2xl transform transition-all">
-      <h3 class="font-bold text-lg text-gray-800">Daten laden 📥</h3>
-      <p class="text-sm text-gray-600 leading-relaxed">Füge hier den Code ein, den du per WhatsApp oder iMessage kopiert hast.</p>
-      <textarea id="importInput" rows="4" placeholder="Code hier einfügen..." class="w-full border border-gray-300 p-3 rounded-lg text-xs font-mono focus:outline-none focus:border-emerald-500 bg-gray-50"></textarea>
-      <div class="flex gap-3 pt-2">
-        <button onclick="closeImportModal()" class="w-1/2 bg-white border border-gray-300 text-gray-700 py-2.5 rounded-lg text-sm font-bold transition hover:bg-gray-50">Abbrechen</button>
-        <button onclick="importData()" class="w-1/2 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg text-sm font-bold transition shadow">Übernehmen</button>
-      </div>
-    </div>
-  </div>
-
   <script>
-    let currentIngredients = [];
-    let editingDishId = null;
-
-    // Lokaler Speicher (LocalStorage)
+    let ingredients = [];
     let state = {
       dishes: JSON.parse(localStorage.getItem('dishes')) || [
-        { id: 1, name: 'Spaghetti Bolognese', cat: 'weekday', ingredients: ['Spaghetti', '500g Hackfleisch', 'Passierte Tomaten', 'Zwiebel'] },
-        { id: 2, name: 'Sonntagsbraten', cat: 'weekend', ingredients: ['Rinderbraten', 'Kartoffeln', 'Rotkohl'] }
+        { id: 1, name: 'Spaghetti Bolognese', cat: 'weekday', ingredients: ['Spaghetti', 'Hackfleisch', 'Tomaten'] }
       ],
       plan: JSON.parse(localStorage.getItem('plan')) || {},
       shopping: JSON.parse(localStorage.getItem('shopping')) || []
     };
 
     function init() {
+      if (window.location.hash.length > 10) {
+        try {
+          const encodedData = window.location.hash.substring(1);
+          const decoded = JSON.parse(decodeURIComponent(escape(atob(encodedData))));
+          if (decoded && (decoded.dishes || decoded.plan || decoded.shopping)) {
+            state = decoded;
+            saveState();
+            history.replaceState(null, null, ' ');
+            alert('✅ Neuen Essensplan & Liste übernommen!');
+          }
+        } catch (e) {
+          console.log('Fehler beim Link-Import');
+        }
+      }
       renderAll();
     }
 
@@ -141,8 +115,7 @@
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
       document.getElementById(`sec-${tab}`).classList.remove('hidden');
       ['plan', 'dishes', 'shopping'].forEach(t => {
-        const btn = document.getElementById(`nav-${t}`);
-        btn.className = `flex flex-col items-center w-1/3 py-1 transition-colors ${t === tab ? 'text-emerald-600' : 'text-gray-400'}`;
+        document.getElementById(`nav-${t}`).className = `flex flex-col items-center ${t === tab ? 'text-emerald-600' : 'text-gray-400'}`;
       });
     }
 
@@ -153,206 +126,100 @@
     }
 
     function renderDishes() {
-      const container = document.getElementById('dishesList');
-      if (state.dishes.length === 0) {
-         container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Noch keine Gerichte gespeichert.</p>';
-         return;
-      }
-      container.innerHTML = state.dishes.map(d => `
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-start gap-2">
-          <div class="flex-1">
-            <div class="font-bold text-gray-800 text-base">${d.name}</div>
-            <div class="text-xs text-emerald-600 font-medium">${d.cat === 'weekday' ? 'Unter der Woche' : d.cat === 'weekend' ? 'Wochenende' : 'Jederzeit'}</div>
-            <div class="text-sm text-gray-500 mt-2 leading-tight">${d.ingredients && d.ingredients.length ? d.ingredients.join(', ') : '<i class="text-gray-300">Keine Zutaten hinterlegt</i>'}</div>
+      document.getElementById('dishesList').innerHTML = state.dishes.map(d => `
+        <div class="bg-white p-3 rounded-xl shadow flex justify-between items-center">
+          <div>
+            <div class="font-bold text-sm">${d.name}</div>
+            <div class="text-xs text-gray-400">${d.ingredients ? d.ingredients.join(', ') : ''}</div>
           </div>
-          <div class="flex flex-col gap-2 items-end">
-            <button onclick="addIngredientsToCartByDish('${d.name}')" class="bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-emerald-100 transition border border-emerald-100">🛒 Auf Liste</button>
-            <div class="flex gap-2 mt-1 bg-gray-50 px-2 py-1 rounded-lg">
-              <button onclick="editDish(${d.id})" class="text-gray-500 hover:text-emerald-600 text-lg">✏️</button>
-              <button onclick="deleteDish(${d.id})" class="text-gray-400 hover:text-red-500 text-lg">🗑️</button>
-            </div>
-          </div>
+          <button onclick="deleteDish(${d.id})" class="text-gray-300 hover:text-red-500 font-bold px-2">✕</button>
         </div>
       `).join('');
     }
 
     function renderPlan() {
       const days = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
-      const container = document.getElementById('planList');
-      container.innerHTML = days.map(day => {
-        const dishName = state.plan[day];
-        return `
-          <div class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center gap-3">
-            <span class="font-semibold text-sm text-gray-400 w-20">${day}</span>
-            <span class="font-bold text-base text-gray-800 flex-1">${dishName || '<span class="text-gray-300 font-normal">Noch offen</span>'}</span>
-            ${dishName ? `<button onclick="addIngredientsToCartByDish('${dishName}')" class="bg-emerald-50 text-emerald-700 px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-emerald-100 transition border border-emerald-100">🛒 Zutaten</button>` : ''}
-          </div>
-        `;
-      }).join('');
+      document.getElementById('planList').innerHTML = days.map(day => `
+        <div class="bg-white p-3 rounded-xl shadow flex justify-between items-center">
+          <span class="font-semibold text-xs text-gray-400 w-20">${day}</span>
+          <span class="font-bold text-sm text-gray-800 flex-1">${state.plan[day] || '<i>Offen</i>'}</span>
+          <button onclick="rollSingleDay('${day}')" title="Nur diesen Tag neu würfeln" class="text-gray-400 hover:text-emerald-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+            🎲
+          </button>
+        </div>
+      `).join('');
     }
 
     function renderShopping() {
-      const container = document.getElementById('shoppingList');
-      if (state.shopping.length === 0) {
-        container.innerHTML = `<li class="p-6 text-center text-sm text-gray-400">Deine Einkaufsliste ist leer.</li>`;
-        return;
-      }
-      container.innerHTML = state.shopping.map((item, idx) => `
-        <li class="p-4 flex justify-between items-center text-base hover:bg-gray-50 transition">
-          <span class="${item.done ? 'line-through text-gray-300' : 'text-gray-800 font-medium'} cursor-pointer flex-1 flex items-center gap-3" onclick="toggleShop(${idx})">
-            <div class="w-5 h-5 rounded border-2 flex items-center justify-center ${item.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300'}">
-              ${item.done ? '✓' : ''}
-            </div>
-            ${item.text}
-          </span>
-          <button onclick="removeShop(${idx})" class="text-gray-300 hover:text-red-500 text-lg font-bold px-2 py-1">✕</button>
+      document.getElementById('shoppingList').innerHTML = state.shopping.map((item, idx) => `
+        <li class="p-3 flex justify-between items-center text-sm">
+          <span class="${item.done ? 'line-through text-gray-300' : ''} cursor-pointer" onclick="toggleShop(${idx})">${item.text}</span>
+          <button onclick="removeShop(${idx})" class="text-gray-300 hover:text-red-500 font-bold px-2">✕</button>
         </li>
       `).join('');
     }
 
-    function addManualIngredient() {
+    function addIngredient() {
       const inp = document.getElementById('manualIngredient');
       if (inp.value.trim()) {
-        currentIngredients.push(inp.value.trim());
+        ingredients.push(inp.value.trim());
         inp.value = '';
         renderChips();
       }
     }
 
-    // Wenn man im Zutat-Feld Enter drückt
-    document.getElementById('manualIngredient').addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        addManualIngredient();
-      }
-    });
-
-    // Wenn man im Einkaufs-Feld Enter drückt
-    document.getElementById('shopInput').addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        addShoppingItem();
-      }
-    });
-
-    function removeChip(idx) {
-      currentIngredients.splice(idx, 1);
-      renderChips();
-    }
-
     function renderChips() {
-      document.getElementById('ingredientChips').innerHTML = currentIngredients.map((i, idx) => `
-        <span class="bg-emerald-100 text-emerald-800 text-sm px-2.5 py-1 rounded-full flex items-center gap-1 font-medium">
-          ${i} <button onclick="removeChip(${idx})" class="font-bold text-emerald-900 hover:text-red-600 ml-1">✕</button>
-        </span>
-      `).join('');
+      document.getElementById('ingredientChips').innerHTML = ingredients.map(i => `<span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-full">${i}</span>`).join('');
     }
 
     function saveDish() {
       const name = document.getElementById('dishName').value.trim();
-      const cat = document.getElementById('dishCategory').value;
-      if (!name) return alert('Bitte gib dem Gericht einen Namen!');
-
-      if (editingDishId !== null) {
-        const dish = state.dishes.find(d => d.id === editingDishId);
-        if (dish) {
-          dish.name = name;
-          dish.cat = cat;
-          dish.ingredients = [...currentIngredients];
-        }
-      } else {
-        state.dishes.push({
-          id: Date.now(),
-          name: name,
-          cat: cat,
-          ingredients: [...currentIngredients]
-        });
-      }
-
-      cancelEdit();
+      if (!name) return;
+      state.dishes.push({ id: Date.now(), name, cat: document.getElementById('dishCategory').value, ingredients: [...ingredients] });
+      document.getElementById('dishName').value = '';
+      ingredients = [];
+      renderChips();
       saveState();
     }
 
-    function editDish(id) {
-      const dish = state.dishes.find(d => d.id === id);
-      if (!dish) return;
-
-      editingDishId = id;
-      document.getElementById('dishName').value = dish.name;
-      document.getElementById('dishCategory').value = dish.cat;
-      currentIngredients = dish.ingredients ? [...dish.ingredients] : [];
-      renderChips();
-
-      document.getElementById('formTitle').innerText = 'Gericht bearbeiten';
-      document.getElementById('saveDishBtn').innerText = 'Änderungen speichern';
-      document.getElementById('cancelEditBtn').classList.remove('hidden');
-
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function cancelEdit() {
-      editingDishId = null;
-      document.getElementById('dishName').value = '';
-      currentIngredients = [];
-      renderChips();
-
-      document.getElementById('formTitle').innerText = 'Neues Gericht anlegen';
-      document.getElementById('saveDishBtn').innerText = 'Speichern';
-      document.getElementById('cancelEditBtn').classList.add('hidden');
-    }
-
     function deleteDish(id) {
-      if (confirm('Dieses Gericht wirklich löschen?')) {
-        state.dishes = state.dishes.filter(d => d.id !== id);
-        if (editingDishId === id) cancelEdit();
-        
-        // Gericht auch aus dem aktuellen Wochenplan entfernen, falls es dort steht
-        for (const day in state.plan) {
-           const dishToDelete = state.dishes.find(d => d.id === id);
-           // Kleiner Trick: Da das Gericht oben schon gelöscht wurde, checken wir nur den Namen.
-           // Es ist besser, wenn wir den Wochenplan einfach neu würfeln oder so lassen.
-        }
-        
-        saveState();
-      }
-    }
-
-    function addIngredientsToCartByDish(dishName) {
-      const dish = state.dishes.find(d => d.name === dishName);
-      if (dish && dish.ingredients && dish.ingredients.length > 0) {
-        dish.ingredients.forEach(ing => {
-            // Nur hinzufügen, wenn es nicht schon als (unerledigt) auf der Liste steht
-            const exists = state.shopping.find(s => s.text.toLowerCase() === ing.toLowerCase() && !s.done);
-            if (!exists) {
-                state.shopping.push({ text: ing, done: false });
-            }
-        });
-        saveState();
-        alert(`Die Zutaten für "${dishName}" liegen jetzt auf der Einkaufsliste!`);
-      } else {
-        alert('Für dieses Gericht hast du leider keine Zutaten gespeichert.');
-      }
+      state.dishes = state.dishes.filter(d => d.id !== id);
+      saveState();
     }
 
     function generatePlan() {
       const days = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
-      
-      if(state.dishes.length === 0) {
-          alert("Lege zuerst ein paar Gerichte an!");
-          return;
-      }
-
       days.forEach(day => {
-        const isWeekend = day === 'Samstag' || day === 'Sonntag';
-        const filtered = state.dishes.filter(d => d.cat === 'all' || (isWeekend ? d.cat === 'weekend' : d.cat === 'weekday'));
-        if (filtered.length) {
-          state.plan[day] = filtered[Math.floor(Math.random() * filtered.length)].name;
-        }
+        rollSingleDay(day, false);
       });
       saveState();
     }
 
-    function addShoppingItem() {
+    // NEU: Einzelnen Tag neu würfeln
+    function rollSingleDay(day, shouldSave = true) {
+      if (!state.dishes || state.dishes.length === 0) return;
+      
+      // Filter nach Wochentag / Wochenende falls Kategorie gewählt
+      const isWeekend = (day === 'Samstag' || day === 'Sonntag');
+      let matchingDishes = state.dishes.filter(d => {
+        if (d.cat === 'all') return true;
+        if (isWeekend && d.cat === 'weekend') return true;
+        if (!isWeekend && d.cat === 'weekday') return true;
+        return false;
+      });
+
+      // Falls keine spezifischen Gerichte für das Wochenende / die Woche existieren, nimm alle
+      if (matchingDishes.length === 0) matchingDishes = state.dishes;
+
+      const randomDish = matchingDishes[Math.floor(Math.random() * matchingDishes.length)];
+      state.plan[day] = randomDish.name;
+
+      if (shouldSave) {
+        saveState();
+      }
+    }
+
+    function addShopItem() {
       const inp = document.getElementById('shopInput');
       if (inp.value.trim()) {
         state.shopping.push({ text: inp.value.trim(), done: false });
@@ -361,23 +228,9 @@
       }
     }
 
-    function toggleShop(idx) {
-      state.shopping[idx].done = !state.shopping[idx].done;
-      saveState();
-    }
-
-    function removeShop(idx) {
-      state.shopping.splice(idx, 1);
-      saveState();
-    }
-
-    function clearShoppingList() {
-      if (state.shopping.length === 0) return;
-      if (confirm('Möchtest du wirklich alle Einträge von der Einkaufsliste löschen?')) {
-        state.shopping = [];
-        saveState();
-      }
-    }
+    function toggleShop(idx) { state.shopping[idx].done = !state.shopping[idx].done; saveState(); }
+    function removeShop(idx) { state.shopping.splice(idx, 1); saveState(); }
+    function clearShopping() { state.shopping = []; saveState(); }
 
     function saveState() {
       localStorage.setItem('dishes', JSON.stringify(state.dishes));
@@ -386,68 +239,18 @@
       renderAll();
     }
 
-    // --- TEILEN & LADEN FUNKTION (Die Magie ohne Server) ---
+    function shareViaLink() {
+      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+      const shareUrl = `${window.location.origin}${window.location.pathname}#${encoded}`;
 
-    // Berücksichtigt deutsche Umlaute beim Kodieren
-    function b64EncodeUnicode(str) {
-        return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
-            function toSolidBytes(match, p1) {
-                return String.fromCharCode('0x' + p1);
-        }));
-    }
-
-    function b64DecodeUnicode(str) {
-        return decodeURIComponent(atob(str).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-    }
-
-    function shareData() {
-      try {
-        const encoded = b64EncodeUnicode(JSON.stringify(state));
-        
-        // Auf iPhones öffnet das direkt das Standard-Teilen-Menü (WhatsApp, iMessage, etc.)
-        if (navigator.share) {
-          navigator.share({
-            title: 'Essensplan Update',
-            text: `Hier ist unser aktueller Essensplan & Einkaufsliste. Kopiere einfach diesen kryptischen Text und klicke in der App auf "Laden":\n\n${encoded}`
-          }).catch(() => {});
-        } else {
-          // Falls am PC: in die Zwischenablage kopieren
-          navigator.clipboard.writeText(encoded);
-          alert('Der Code wurde kopiert! Du kannst ihn nun per Messenger verschicken.');
-        }
-      } catch(e) {
-          alert('Fehler beim Erstellen des Codes.');
-      }
-    }
-
-    function openImportModal() { document.getElementById('importModal').classList.remove('hidden'); }
-    function closeImportModal() { document.getElementById('importModal').classList.add('hidden'); }
-
-    function importData() {
-      const raw = document.getElementById('importInput').value.trim();
-      if (!raw) return;
-
-      try {
-        // Findet den Base64-Code, auch wenn noch "Hier ist unser aktueller Plan..." im Text steht
-        const codeMatch = raw.match(/[A-Za-z0-9+/=]{20,}/);
-        const codeToDecode = codeMatch ? codeMatch[0] : raw;
-
-        const decoded = JSON.parse(b64DecodeUnicode(codeToDecode));
-        
-        // Prüfen, ob es gültige App-Daten sind
-        if (decoded && (decoded.dishes || decoded.plan || decoded.shopping)) {
-          state = decoded;
-          saveState();
-          closeImportModal();
-          document.getElementById('importInput').value = '';
-          alert('✅ Plan & Listen wurden erfolgreich aktualisiert!');
-        } else {
-          alert('Ungültiger Code!');
-        }
-      } catch (e) {
-        alert('Fehler beim Lesen des Codes. Bitte prüfe, ob der Text vollständig kopiert wurde.');
+      if (navigator.share) {
+        navigator.share({
+          title: 'Essensplan',
+          url: shareUrl
+        }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(shareUrl);
+        alert('Teilen-Link kopiert!');
       }
     }
 
