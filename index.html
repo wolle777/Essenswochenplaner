@@ -86,13 +86,11 @@
   <script>
     let ingredients = [];
     
-    // Daten aus dem lokalen Speicher (localStorage) auslesen
     let savedDishes = localStorage.getItem('dishes');
     let savedPlan = localStorage.getItem('plan');
     let savedShopping = localStorage.getItem('shopping');
 
     let state = {
-      // Nur wenn noch NIE Gerichte eingegeben wurden, wird ein Beispielgericht hinterlegt
       dishes: savedDishes ? JSON.parse(savedDishes) : [
         { id: 1, name: 'Spaghetti Bolognese', cat: 'weekday', ingredients: ['Spaghetti', 'Hackfleisch', 'Tomaten'] }
       ],
@@ -101,13 +99,11 @@
     };
 
     function init() {
-      // Import via Hash-Link falls vorhanden
       if (window.location.hash.length > 10) {
         try {
           const encodedData = window.location.hash.substring(1);
           const decoded = JSON.parse(decodeURIComponent(escape(atob(encodedData))));
           if (decoded) {
-            // Bereits gespeicherte Gerichte nicht versehentlich löschen, falls der übertragene Link keine Gerichte enthält
             if (decoded.dishes && decoded.dishes.length > 0) {
               state.dishes = decoded.dishes;
             }
@@ -153,15 +149,53 @@
 
     function renderPlan() {
       const days = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
-      document.getElementById('planList').innerHTML = days.map(day => `
-        <div class="bg-white p-3 rounded-xl shadow flex justify-between items-center">
-          <span class="font-semibold text-xs text-gray-400 w-20">${day}</span>
-          <span class="font-bold text-sm text-gray-800 flex-1">${state.plan[day] || '<i>Offen</i>'}</span>
-          <button onclick="rollSingleDay('${day}')" title="Nur diesen Tag neu würfeln" class="text-gray-400 hover:text-emerald-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
-            🎲
-          </button>
-        </div>
-      `).join('');
+      document.getElementById('planList').innerHTML = days.map(day => {
+        const dishName = state.plan[day];
+        const hasDish = dishName && dishName !== '<i>Offen</i>';
+
+        return `
+          <div class="bg-white p-3 rounded-xl shadow flex justify-between items-center gap-2">
+            <span class="font-semibold text-xs text-gray-400 w-16 flex-shrink-0">${day}</span>
+            <span class="font-bold text-sm text-gray-800 flex-1 truncate">${dishName || '<i>Offen</i>'}</span>
+            
+            <div class="flex items-center gap-1">
+              ${hasDish ? `
+                <button onclick="addIngredientsToShopping('${day}')" title="Zutaten auf Einkaufsliste setzen" class="text-emerald-600 hover:text-emerald-800 p-1 rounded-lg hover:bg-emerald-50 transition-colors">
+                  🛒
+                </button>
+              ` : ''}
+              <button onclick="rollSingleDay('${day}')" title="Nur diesen Tag neu würfeln" class="text-gray-400 hover:text-emerald-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                🎲
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Zutaten des Tagesgerichts zur Einkaufsliste hinzufügen
+    function addIngredientsToShopping(day) {
+      const dishName = state.plan[day];
+      if (!dishName) return;
+
+      const dish = state.dishes.find(d => d.name === dishName);
+      if (!dish || !dish.ingredients || dish.ingredients.length === 0) {
+        alert('Dieses Gericht hat keine hinterlegten Zutaten.');
+        return;
+      }
+
+      let addedCount = 0;
+      dish.ingredients.forEach(ing => {
+        // Prüfen, ob Zutat bereits auf der Liste ist
+        const exists = state.shopping.some(item => item.text.toLowerCase() === ing.toLowerCase());
+        if (!exists) {
+          state.shopping.push({ text: ing, done: false });
+          addedCount++;
+        }
+      });
+
+      saveState();
+      alert(`🛒 ${addedCount} Zutat(en) von "${dishName}" zur Einkaufsliste hinzugefügt!`);
     }
 
     function renderShopping() {
