@@ -85,21 +85,35 @@
 
   <script>
     let ingredients = [];
+    
+    // Daten aus dem lokalen Speicher (localStorage) auslesen
+    let savedDishes = localStorage.getItem('dishes');
+    let savedPlan = localStorage.getItem('plan');
+    let savedShopping = localStorage.getItem('shopping');
+
     let state = {
-      dishes: JSON.parse(localStorage.getItem('dishes')) || [
+      // Nur wenn noch NIE Gerichte eingegeben wurden, wird ein Beispielgericht hinterlegt
+      dishes: savedDishes ? JSON.parse(savedDishes) : [
         { id: 1, name: 'Spaghetti Bolognese', cat: 'weekday', ingredients: ['Spaghetti', 'Hackfleisch', 'Tomaten'] }
       ],
-      plan: JSON.parse(localStorage.getItem('plan')) || {},
-      shopping: JSON.parse(localStorage.getItem('shopping')) || []
+      plan: savedPlan ? JSON.parse(savedPlan) : {},
+      shopping: savedShopping ? JSON.parse(savedShopping) : []
     };
 
     function init() {
+      // Import via Hash-Link falls vorhanden
       if (window.location.hash.length > 10) {
         try {
           const encodedData = window.location.hash.substring(1);
           const decoded = JSON.parse(decodeURIComponent(escape(atob(encodedData))));
-          if (decoded && (decoded.dishes || decoded.plan || decoded.shopping)) {
-            state = decoded;
+          if (decoded) {
+            // Bereits gespeicherte Gerichte nicht versehentlich löschen, falls der übertragene Link keine Gerichte enthält
+            if (decoded.dishes && decoded.dishes.length > 0) {
+              state.dishes = decoded.dishes;
+            }
+            if (decoded.plan) state.plan = decoded.plan;
+            if (decoded.shopping) state.shopping = decoded.shopping;
+            
             saveState();
             history.replaceState(null, null, ' ');
             alert('✅ Neuen Essensplan & Liste übernommen!');
@@ -195,11 +209,9 @@
       saveState();
     }
 
-    // NEU: Einzelnen Tag neu würfeln
     function rollSingleDay(day, shouldSave = true) {
       if (!state.dishes || state.dishes.length === 0) return;
       
-      // Filter nach Wochentag / Wochenende falls Kategorie gewählt
       const isWeekend = (day === 'Samstag' || day === 'Sonntag');
       let matchingDishes = state.dishes.filter(d => {
         if (d.cat === 'all') return true;
@@ -208,7 +220,6 @@
         return false;
       });
 
-      // Falls keine spezifischen Gerichte für das Wochenende / die Woche existieren, nimm alle
       if (matchingDishes.length === 0) matchingDishes = state.dishes;
 
       const randomDish = matchingDishes[Math.floor(Math.random() * matchingDishes.length)];
