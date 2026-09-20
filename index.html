@@ -9,7 +9,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>body { -webkit-tap-highlight-color: transparent; }</style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans pb-20">
+<body class="bg-gray-100 text-gray-800 font-sans pb-24">
 
   <!-- HEADER -->
   <header class="bg-emerald-600 text-white p-4 sticky top-0 shadow-md flex justify-between items-center z-10">
@@ -76,11 +76,20 @@
 
   </main>
 
-  <!-- NAVIGATION -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 text-xs font-medium z-10 pb-5">
-    <button onclick="switchTab('plan')" id="nav-plan" class="flex flex-col items-center text-emerald-600">📅 Planer</button>
-    <button onclick="switchTab('dishes')" id="nav-dishes" class="flex flex-col items-center text-gray-400">🍲 Gerichte</button>
-    <button onclick="switchTab('shopping')" id="nav-shopping" class="flex flex-col items-center text-gray-400">🛒 Einkauf</button>
+  <!-- NAVIGATION (VERGRÖSSERT) -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center py-3 z-10 pb-6 shadow-lg">
+    <button onclick="switchTab('plan')" id="nav-plan" class="flex flex-col items-center gap-1 text-emerald-600 font-semibold transition-colors">
+      <span class="text-2xl">📅</span>
+      <span class="text-sm">Planer</span>
+    </button>
+    <button onclick="switchTab('dishes')" id="nav-dishes" class="flex flex-col items-center gap-1 text-gray-400 font-semibold transition-colors">
+      <span class="text-2xl">🍲</span>
+      <span class="text-sm">Gerichte</span>
+    </button>
+    <button onclick="switchTab('shopping')" id="nav-shopping" class="flex flex-col items-center gap-1 text-gray-400 font-semibold transition-colors">
+      <span class="text-2xl">🛒</span>
+      <span class="text-sm">Einkauf</span>
+    </button>
   </nav>
 
   <script>
@@ -125,7 +134,7 @@
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
       document.getElementById(`sec-${tab}`).classList.remove('hidden');
       ['plan', 'dishes', 'shopping'].forEach(t => {
-        document.getElementById(`nav-${t}`).className = `flex flex-col items-center ${t === tab ? 'text-emerald-600' : 'text-gray-400'}`;
+        document.getElementById(`nav-${t}`).className = `flex flex-col items-center gap-1 font-semibold transition-colors ${t === tab ? 'text-emerald-600' : 'text-gray-400'}`;
       });
     }
 
@@ -142,7 +151,7 @@
             <div class="font-bold text-sm">${d.name}</div>
             <div class="text-xs text-gray-400">${d.ingredients ? d.ingredients.join(', ') : ''}</div>
           </div>
-          <button onclick="deleteDish(${d.id})" class="text-gray-300 hover:text-red-500 font-bold px-2">✕</button>
+          <button onclick="deleteDish(${d.id})" class="text-gray-300 hover:text-red-500 font-bold px-2 text-lg">✕</button>
         </div>
       `).join('');
     }
@@ -160,11 +169,11 @@
             
             <div class="flex items-center gap-1">
               ${hasDish ? `
-                <button onclick="addIngredientsToShopping('${day}')" title="Zutaten auf Einkaufsliste setzen" class="text-emerald-600 hover:text-emerald-800 p-1 rounded-lg hover:bg-emerald-50 transition-colors">
+                <button onclick="addIngredientsToShopping('${day}')" title="Zutaten auf Einkaufsliste setzen" class="text-emerald-600 hover:text-emerald-800 p-1.5 rounded-lg hover:bg-emerald-50 transition-colors text-lg">
                   🛒
                 </button>
               ` : ''}
-              <button onclick="rollSingleDay('${day}')" title="Nur diesen Tag neu würfeln" class="text-gray-400 hover:text-emerald-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+              <button onclick="rollSingleDay('${day}')" title="Nur diesen Tag neu würfeln" class="text-gray-400 hover:text-emerald-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-lg">
                 🎲
               </button>
             </div>
@@ -173,7 +182,6 @@
       }).join('');
     }
 
-    // Zutaten des Tagesgerichts zur Einkaufsliste hinzufügen
     function addIngredientsToShopping(day) {
       const dishName = state.plan[day];
       if (!dishName) return;
@@ -186,7 +194,6 @@
 
       let addedCount = 0;
       dish.ingredients.forEach(ing => {
-        // Prüfen, ob Zutat bereits auf der Liste ist
         const exists = state.shopping.some(item => item.text.toLowerCase() === ing.toLowerCase());
         if (!exists) {
           state.shopping.push({ text: ing, done: false });
@@ -202,7 +209,7 @@
       document.getElementById('shoppingList').innerHTML = state.shopping.map((item, idx) => `
         <li class="p-3 flex justify-between items-center text-sm">
           <span class="${item.done ? 'line-through text-gray-300' : ''} cursor-pointer" onclick="toggleShop(${idx})">${item.text}</span>
-          <button onclick="removeShop(${idx})" class="text-gray-300 hover:text-red-500 font-bold px-2">✕</button>
+          <button onclick="removeShop(${idx})" class="text-gray-300 hover:text-red-500 font-bold px-2 text-lg">✕</button>
         </li>
       `).join('');
     }
